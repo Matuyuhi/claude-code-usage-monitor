@@ -6,27 +6,43 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct claudeCodeUsageMonitorApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @State private var settingsManager = SettingsManager.shared
+    @State private var usageService = UsageService()
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra {
+            MenuBarView(settingsManager: settingsManager, usageService: usageService)
+        } label: {
+            AnimatedMenuBarIcon(isActive: usageService.isActive)
         }
-        .modelContainer(sharedModelContainer)
+        .menuBarExtraStyle(.window)
+
+        Window("Settings", id: "settings") {
+            SettingsView(settingsManager: settingsManager)
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 320, height: 340)
+    }
+}
+
+struct AnimatedMenuBarIcon: View {
+    let isActive: Bool
+    @State private var animationPhase: CGFloat = 0
+
+    var body: some View {
+        Image(systemName: iconName)
+            .symbolEffect(.pulse, isActive: isActive)
+    }
+
+    private var iconName: String {
+        if isActive {
+            return "bolt.fill"
+        } else {
+            return "chart.bar.fill"
+        }
     }
 }
